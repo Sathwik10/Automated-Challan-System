@@ -1,0 +1,92 @@
+# ─────────────────────────────────────────────────────────────
+#  Automated Challan System – Configuration
+# ─────────────────────────────────────────────────────────────
+
+# ── Paths ──────────────────────────────────────────────────────
+paths:
+  raw_data:        data/raw
+  processed_data:  data/processed
+  datasets:        data/datasets
+  train:           data/datasets/train
+  val:             data/datasets/val
+  test:            data/datasets/test
+  models_dir:      models/
+  vehicle_model:   models/vehicle_model.h5
+  plate_model:     models/plate_model.h5
+  ocr_model:       models/ocr_model.h5
+  challan_log:     data/challans.csv
+
+# ── Image / Video Input ────────────────────────────────────────
+input:
+  source: 0                  # 0 = webcam, or path to video file
+  frame_width:  1280
+  frame_height: 720
+  fps:          30
+
+# ── Pre-processing ─────────────────────────────────────────────
+preprocessing:
+  image_size: [640, 640]     # Resize target (H, W)
+  normalize: true
+  augmentation:
+    horizontal_flip: true
+    brightness_range: [0.7, 1.3]
+    zoom_range: 0.15
+    rotation_range: 10
+
+# ── Vehicle Detection Model ────────────────────────────────────
+vehicle_detection:
+  input_shape: [640, 640, 3]
+  num_classes: 5             # car, truck, bike, bus, auto-rickshaw
+  confidence_threshold: 0.50
+  nms_threshold: 0.45
+  backbone: "MobileNetV2"    # lightweight backbone
+  pretrained: true
+
+# ── Plate Detection Model ──────────────────────────────────────
+plate_detection:
+  input_shape: [320, 320, 3]
+  confidence_threshold: 0.60
+  nms_threshold: 0.40
+
+# ── OCR / Plate Recognition ────────────────────────────────────
+plate_recognition:
+  input_shape: [64, 128, 1]  # Grayscale plate crop
+  charset: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+  num_classes: 36
+  use_tesseract_fallback: true
+
+# ── Training ───────────────────────────────────────────────────
+training:
+  epochs:        50
+  batch_size:    32
+  learning_rate: 0.001
+  optimizer:     "adam"
+  early_stopping_patience: 7
+  reduce_lr_patience:      3
+  validation_split: 0.15
+
+# ── Violation Detection ────────────────────────────────────────
+violation:
+  speed_limit_kmph: 60          # Threshold for over-speeding
+  pixels_per_meter: 10          # Calibration factor
+  red_light_roi:                # Region-of-interest for signal
+    x1: 500
+    y1: 50
+    x2: 780
+    y2: 150
+  line_crossing:
+    stop_line_y: 400            # Pixel row for stop-line
+  track_history_frames: 30      # Frames kept for speed estimation
+
+# ── Tracker (SORT) ─────────────────────────────────────────────
+tracker:
+  max_age:     10
+  min_hits:    3
+  iou_threshold: 0.3
+
+# ── Challan ────────────────────────────────────────────────────
+challan:
+  fine_overspeed: 2000          # INR
+  fine_red_light: 5000
+  fine_line_cross: 1000
+  issuing_authority: "Traffic Police – Automated System"
